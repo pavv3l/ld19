@@ -256,6 +256,7 @@ bool LD19::analyzeChunk(uint8_t* bit, int len)
 
         }
     }
+    return true;
 }
 
 bool LD19::analyzeFrame(uint8_t* frame, int len)
