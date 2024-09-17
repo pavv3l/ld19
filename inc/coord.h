@@ -60,6 +60,8 @@ public:
     {
       _precision = prec;
     }
+
+    static float round(float arg, int prec);
 };
 
 inline float DegreesToRadians(float deg)

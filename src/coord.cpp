@@ -4,28 +4,29 @@
 
 uint32_t Coord::_precision = 3;
 
-float round(float arg, int prec)
+float Coord::round(float arg, int prec)
 {
-    ++prec;
     float mult = std::pow(10, prec);
     if(arg > 0)
     {
-        return (arg + 5.0 / mult);
+        arg *= mult;
+        arg += 0.5;
     }
     else if(arg < 0)
     {
-        return (arg - 5.0 / mult);
+        arg *= mult;
+        arg -= 0.5;
     }
     else
     {
         return arg;
     }
-    
+    return static_cast<int>(arg)/mult;
 }
 
 std::ostream& operator<<(std::ostream& os, const Coord& crd)
 {
-    os << std::dec << (int)crd.timestamp << ":" << std::dec << std::fixed <<std::setprecision(crd._precision) << round(crd.x, crd._precision) << ":"
-    << std::dec << std::fixed << std::setprecision(crd._precision) << round(crd.y, crd._precision) << ":" << std::dec << (int)crd.intensity << "\n";
+    os << std::dec << (int)crd.timestamp << ":" << std::dec << std::fixed <<std::setprecision(crd._precision) << Coord::round(crd.x, crd._precision) << ":"
+    << std::dec << std::fixed << std::setprecision(crd._precision) << Coord::round(crd.y, crd._precision) << ":" << std::dec << (int)crd.intensity << "\n";
     return os;
 }
