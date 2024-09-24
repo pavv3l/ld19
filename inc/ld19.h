@@ -21,11 +21,11 @@ protected:
     std::string saveFilLidar;
     std::string saveFilCord;
 
-    std::fstream fileLoad;
+    std::ifstream fileLoad;
 
     bool CRC8(uint8_t* data, int len);
 
-    bool analyzeChunk(uint8_t* bit, int len);
+    bool analyzeChunk(std::vector<uint8_t> bit);
 
     bool analyzeFrame(uint8_t* frame, int len);
 

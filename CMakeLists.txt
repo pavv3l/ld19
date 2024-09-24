@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 set(CMAKE_BUILD_TYPE Debug)
 
-add_subdirectory(external)
+#add_subdirectory(external)
 
 aux_source_directory(src SRC_FILES)
 
@@ -20,5 +20,5 @@ target_compile_options(LD19 PUBLIC -g)
 
 if(NOT ${CMAKE_BUILD_TYPE} STREQUAL "Release")
 #set(GTest_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/googletest)
-add_subdirectory(ut)
+#add_subdirectory(ut)
 endif()

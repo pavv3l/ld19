@@ -13,8 +13,10 @@ int main(int argc, char** argv)
     int opt = -1;
     const char* cvalue = NULL;
     std::string file;
+    int intensity = 0; //
+    int round = 0; // 2 or 3
 
-    while( (opt = getopt(argc, argv, "fir")) != -1)
+    while( (opt = getopt(argc, argv, "f:i:r:")) != -1)
     {
         switch(opt)
         {
@@ -51,7 +53,7 @@ int main(int argc, char** argv)
         }
     }
 
-    return 0;
+    //return 0;
 
     try
     {

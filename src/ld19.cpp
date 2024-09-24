@@ -5,6 +5,9 @@
 #include <exception>
 #include <cstring>
 #include <cmath>
+#include <streambuf>
+#include <istream>
+#include <iterator>
 
 static int bad_readings = 0;
 static int good_readings = 0;
@@ -117,27 +120,32 @@ void LD19::parse()
         std::cerr << "Plik nie otwarty do odczytu\n";
         throw std::runtime_error("Plik nie jest otwarty do odczytu\n");
     }
-    uint8_t* tmp_buffer = reinterpret_cast<uint8_t*>( new(char[BytesChunk]) );
+
+    //uint8_t* tmp_buffer = reinterpret_cast<uint8_t*>( new(char[BytesChunk]) );
+    std::vector<uint8_t> tmp_buffer;
     while(!fileLoad.eof())
     {
-        memset(tmp_buffer, 0, sizeof(tmp_buffer));
-        fileLoad.read(reinterpret_cast<char*>(&tmp_buffer[0]), BytesChunk);
-        int len = fileLoad.gcount();
+        //memset(tmp_buffer, 0, sizeof(tmp_buffer));
+        //fileLoad.read(reinterpret_cast<char*>(&tmp_buffer[0]), BytesChunk);
+        //int len = fileLoad.gcount();
 
-        if(BytesChunk == len)
-        {
-            std::cout << "Parse - readed " << BytesChunk << " bytes of data\n";
-        }
-        else
-        {
-            std::cout << "Parse - readed " << len << " bytes of data\n";
-        }
+        tmp_buffer.insert(tmp_buffer.begin(), std::istream_iterator<uint8_t>(fileLoad), std::istream_iterator<uint8_t>());
+        std::cout << "Odczytano " << tmp_buffer.size() << "\n";
+
+        //if(BytesChunk == len)
+        //{
+        //    std::cout << "Parse - readed " << BytesChunk << " bytes of data\n";
+        //}
+        //else
+        //{
+        //    std::cout << "Parse - readed " << len << " bytes of data\n";
+        //}
     
-        analyzeChunk(tmp_buffer, len);
+        analyzeChunk(tmp_buffer);
     }
     std::cout << "Good readings: " << good_readings << " bad readings " << bad_readings << " Percentage of good "
         << (float)good_readings / (float)(bad_readings + good_readings) << "\n";
-    delete tmp_buffer;
+    //delete tmp_buffer;
 }
 
 void LD19::saveFile(const std::string& str)
@@ -201,13 +209,12 @@ void LD19::saveFile()
     writeFile.close();
 }
 
-bool LD19::analyzeChunk(uint8_t* bit, int len)
+bool LD19::analyzeChunk(std::vector<uint8_t> bit)
 {
     LiDARFrameTypeDef tmp;
     status = Ld19Status::PKG_HEADER;
 
-
-    for(int i = 0; i < len; ++i)
+    for(int i = 0; i < bit.size() - + sizeof(LiDARFrameTypeDef); ++i)
     {
         switch (status)
         {
@@ -224,25 +231,16 @@ bool LD19::analyzeChunk(uint8_t* bit, int len)
             
             if(bit[i] == PKG_VER_LEN)
             {
-                if( (i + sizeof(LiDARFrameTypeDef) - 1 < len) && CRC8(&bit[i-1], sizeof(LiDARFrameTypeDef) - 1))
+                if( analyzeFrame(&bit[i-1], sizeof(LiDARFrameTypeDef)) )
                 {
-                    if( analyzeFrame(&bit[i-1], sizeof(LiDARFrameTypeDef)) )
-                    {
-                        i += sizeof(LiDARFrameTypeDef) - 2;
-                        ++good_readings;
-                    }
-                    else
-                    {
-                        ++bad_readings;
-                    }
-                    status = Ld19Status::PKG_HEADER;
+                    i += sizeof(LiDARFrameTypeDef) - 2;
+                    ++good_readings;
                 }
                 else
                 {
-                    //std::cout << "Analyze frame bad CRC8\n";
                     ++bad_readings;
-                    status = Ld19Status::PKG_HEADER;
                 }
+                status = Ld19Status::PKG_HEADER;
             }
             else
             {
