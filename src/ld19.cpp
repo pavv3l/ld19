@@ -12,8 +12,7 @@
 static int bad_readings = 0;
 static int good_readings = 0;
 static int all_readings = 0;
-
-#define INTENSITY 30
+static int all_bytes = 0;
 
 std::ostream& operator<<(std::ostream& os, LidarPointStructDef* point)
 {
@@ -62,8 +61,6 @@ static const uint8_t CrcTable[256] =
 
 bool LD19::CRC8(uint8_t* data, int len)
 {
-
-    std::cerr << "Check CRC: size: " << sizeof(LiDARFrameTypeDef) << " len " << len << " last byte: " << std::hex << (int)data[len] << "\n";
     uint checkCRC = data[len];
     /*
     for(int i = 0; i < sizeof(LiDARFrameTypeDef); ++i)
@@ -72,6 +69,7 @@ bool LD19::CRC8(uint8_t* data, int len)
     }
     std::cerr << "\n";
     */
+    
 
     uint8_t crc = 0;
     uint16_t i;
@@ -83,8 +81,25 @@ bool LD19::CRC8(uint8_t* data, int len)
     return crc == checkCRC;
 }
 
-LD19::LD19()
+LD19::LD19(uint8_t intens ,LD19_Round round):_intensity(intens)
 {
+    if(round == LD19_Round::LD19_cm)
+    {
+        _round = 2;
+        Coord::_precision = _round;
+    }
+    else if(round == LD19_Round::LD19_mm)
+    {
+        _round = 3;
+        Coord::_precision = _round;
+    }
+    else
+    {
+        std::stringstream str;
+        str << "Bad value of round option: should be cm(2) or mm(3)\n";
+        std::cerr << str.str();
+        throw std::invalid_argument(str.str());
+    }
     status = Ld19Status::PKG_HEADER;
 }
 
@@ -123,13 +138,13 @@ void LD19::parse()
 
     //uint8_t* tmp_buffer = reinterpret_cast<uint8_t*>( new(char[BytesChunk]) );
     std::vector<uint8_t> tmp_buffer;
-    while(!fileLoad.eof())
+    //while(!fileLoad.eof())
     {
         //memset(tmp_buffer, 0, sizeof(tmp_buffer));
         //fileLoad.read(reinterpret_cast<char*>(&tmp_buffer[0]), BytesChunk);
         //int len = fileLoad.gcount();
 
-        tmp_buffer.insert(tmp_buffer.begin(), std::istream_iterator<uint8_t>(fileLoad), std::istream_iterator<uint8_t>());
+        tmp_buffer.insert(tmp_buffer.begin(), std::istreambuf_iterator<char>(fileLoad), std::istreambuf_iterator<char>());
         std::cout << "Odczytano " << tmp_buffer.size() << "\n";
 
         //if(BytesChunk == len)
@@ -143,8 +158,8 @@ void LD19::parse()
     
         analyzeChunk(tmp_buffer);
     }
-    std::cout << "Good readings: " << good_readings << " bad readings " << bad_readings << " Percentage of good "
-        << (float)good_readings / (float)(bad_readings + good_readings) << "\n";
+    float percentOfGood = static_cast<float>(good_readings) / (all_bytes / sizeof(LiDARFrameTypeDef));
+    std::cout << "Good readings: " << good_readings << " percentage of good readings: " << percentOfGood << "\n";
     //delete tmp_buffer;
 }
 
@@ -174,7 +189,7 @@ void LD19::saveFile()
     writeFile.close();
 
 
-    std::string fileCord2 = saveFilCord + "_2";
+    std::string fileCord2 = saveFilCord + "_Coord_xy2";
     writeFile.open(fileCord2, std::ios::binary | std::ios::out);
 
     if(!writeFile.is_open())
@@ -185,13 +200,13 @@ void LD19::saveFile()
     Coord::_precision = 2;
     for(auto& x: coordVec)
     {
-        if(x.intensity > INTENSITY)
+        if(x.intensity > _intensity)
         writeFile << x;
     }
     std::cout << "File coord_2 was saved points " << coordVec.size() << " unikalne start angle: " << temp.size() << "\n";
     writeFile.close();
 
-    std::string fileCord3 = saveFilCord + "_3";
+    std::string fileCord3 = saveFilCord + "_Coord_xy3";
     writeFile.open(fileCord3, std::ios::binary | std::ios::out);
 
     if(!writeFile.is_open())
@@ -202,19 +217,20 @@ void LD19::saveFile()
     Coord::_precision = 3;
     for(auto& x: coordVec)
     {
-        if(x.intensity > INTENSITY)
+        if(x.intensity > _intensity)
         writeFile << x;
     }
     std::cout << "File coord_3 was saved\n";
     writeFile.close();
 }
 
-bool LD19::analyzeChunk(std::vector<uint8_t> bit)
+bool LD19::analyzeChunk(std::vector<uint8_t>& bit)
 {
+    all_bytes += bit.size();
     LiDARFrameTypeDef tmp;
     status = Ld19Status::PKG_HEADER;
 
-    for(int i = 0; i < bit.size() - + sizeof(LiDARFrameTypeDef); ++i)
+    for(int i = 0; i < bit.size() - sizeof(LiDARFrameTypeDef); ++i)
     {
         switch (status)
         {
@@ -222,13 +238,12 @@ bool LD19::analyzeChunk(std::vector<uint8_t> bit)
             
             if(bit[i] == PKG_HEADER)
             {
-            //tmp.header = bit[i];
-            status = Ld19Status::PKG_VER_LEN;
+                //tmp.header = bit[i];
+                status = Ld19Status::PKG_VER_LEN;
             }
             break;
 
         case Ld19Status::PKG_VER_LEN:
-            
             if(bit[i] == PKG_VER_LEN)
             {
                 if( analyzeFrame(&bit[i-1], sizeof(LiDARFrameTypeDef)) )
@@ -249,7 +264,7 @@ bool LD19::analyzeChunk(std::vector<uint8_t> bit)
             break;
 
         default:
-
+            status = Ld19Status::PKG_HEADER;
             break;
 
         }
@@ -261,11 +276,11 @@ bool LD19::analyzeFrame(uint8_t* frame, int len)
 {
     if(CRC8(frame, sizeof(LiDARFrameTypeDef) - 1))
     {
-        std::cout << "Analyze frame CRC OK\n";
+        //std::cout << "Analyze frame CRC OK\n";
     }
     else
     {
-        std::cerr << "Analyze frame CRC NOT OK\n";
+        //std::cerr << "Analyze frame CRC NOT OK\n";
         return false;
     }
 

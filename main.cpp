@@ -14,7 +14,8 @@ int main(int argc, char** argv)
     const char* cvalue = NULL;
     std::string file;
     int intensity = 0; //
-    int round = 0; // 2 or 3
+    LD19_Round roundi = LD19_Round::LLD_19_NONE;
+    std::string valTmp;
 
     while( (opt = getopt(argc, argv, "f:i:r:")) != -1)
     {
@@ -27,10 +28,45 @@ int main(int argc, char** argv)
                 break;
             case 'i':
                 cvalue = optarg;
+                valTmp = cvalue;
+                try
+                {
+                    intensity = std::stoi(valTmp);
+                }
+                catch(const std::exception& e)
+                {
+                    std::cerr << "Bad value of -i argument: " << e.what() << '\n';
+                    return EXIT_FAILURE;
+                }
+                
                 std::cout << "Option " << static_cast<char>(opt) << " value " << cvalue << "\n";
                 break;
             case 'r':
                 cvalue = optarg;
+                valTmp = cvalue;
+                try
+                {
+                    if(cvalue[0] == '2')
+                    {
+                        roundi = LD19_Round::LD19_cm;
+                    }
+                    else if(cvalue[0] == '3')
+                    {
+                        roundi = LD19_Round::LD19_mm;
+                    }
+                    else
+                    {
+                        valTmp = "Bad argument of r option: [" + std::string(cvalue) + "]";
+                        std::cerr << valTmp << "\n";
+                        throw std::invalid_argument(valTmp);
+                    }
+                }
+                catch(const std::exception& e)
+                {
+                    std::cerr << "Bad value of -r argument: " << e.what() << '\n';
+                    return EXIT_FAILURE;
+                }
+                
                 std::cout << "Option " << static_cast<char>(opt) << " value " << cvalue << "\n";
                 break;
             case '?':
@@ -57,7 +93,7 @@ int main(int argc, char** argv)
 
     try
     {
-        LD19 lidar;
+        LD19 lidar(static_cast<uint8_t>(intensity), roundi);
         lidar.open(file);
         lidar.parse();
         lidar.saveFile();
