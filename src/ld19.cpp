@@ -189,7 +189,7 @@ void LD19::saveFile()
     writeFile.close();
 
 
-    std::string fileCord2 = saveFilCord + "_Coord_xy2";
+    std::string fileCord2 = saveFilCord + "_Coord_xy2_i" + std::to_string(_intensity) + ".txt";
     writeFile.open(fileCord2, std::ios::binary | std::ios::out);
 
     if(!writeFile.is_open())
@@ -206,7 +206,7 @@ void LD19::saveFile()
     std::cout << "File coord_2 was saved points " << coordVec.size() << " unikalne start angle: " << temp.size() << "\n";
     writeFile.close();
 
-    std::string fileCord3 = saveFilCord + "_Coord_xy3";
+    std::string fileCord3 = saveFilCord + "_Coord_xy3_i" + std::to_string(_intensity) + ".txt";
     writeFile.open(fileCord3, std::ios::binary | std::ios::out);
 
     if(!writeFile.is_open())
