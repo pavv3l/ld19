@@ -2,6 +2,8 @@
 #include <iomanip>
 #include <cmath>
 
+#include <iostream>
+
 uint32_t Coord::_precision = 3;
 
 float Coord::round(float arg, int prec)
@@ -26,7 +28,12 @@ float Coord::round(float arg, int prec)
 
 std::ostream& operator<<(std::ostream& os, const Coord& crd)
 {
-    os << std::dec << (int)crd.timestamp << ":" << std::dec << std::fixed <<std::setprecision(crd._precision) << Coord::round(crd.x, crd._precision) << ":"
-    << std::dec << std::fixed << std::setprecision(crd._precision) << Coord::round(crd.y, crd._precision) << ":" << std::dec << (int)crd.intensity << "\n";
+    os << std::dec << crd.angle << ":" << std::dec << std::fixed << std::setprecision(crd._precision) << Coord::round(crd.point.x, crd._precision) << ":"
+    << std::dec << std::fixed << std::setprecision(crd._precision) << Coord::round(crd.point.y, crd._precision) << ":" << std::dec << (int)crd.intensity << "\n";
     return os;
+}
+
+bool Coord::operator<(const Coord& c)
+{
+    return point.x < c.point.x || point.x == c.point.x && point.y < c.point.y;
 }

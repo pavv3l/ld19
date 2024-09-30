@@ -45,16 +45,24 @@ struct __attribute__((packed)) LiDARFrameTypeDef
   uint8_t crc8;
 };
 
+struct Point
+{
+  float x = 0.;
+  float y = 0.;
+};
+
 class Coord
 {
 public:
-    float x;
-    float y;
-    uint8_t intensity;
-    uint16_t timestamp;
+    Point point;
+    uint8_t intensity = 0;
+    uint16_t timestamp = 0;
+    float angle = 0;
+    uint16_t distance = 0;
     static uint32_t _precision;
 
     friend std::ostream& operator<<(std::ostream& os, const Coord& crd);
+    bool operator<(const Coord& c);
 
     void setPrecision(int prec)
     {
@@ -62,6 +70,8 @@ public:
     }
 
     static float round(float arg, int prec);
+
+    virtual ~Coord() {}
 };
 
 inline float DegreesToRadians(float deg)

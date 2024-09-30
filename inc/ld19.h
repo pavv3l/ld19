@@ -3,9 +3,11 @@
 
 #include <string>
 #include "coord.h"
+#include "averageCoord.h"
 #include <fstream>
 #include <vector>
 #include <set>
+#include <unordered_map>
 
 enum class LD19_Round
 {
@@ -43,8 +45,12 @@ protected:
     LiDARFrameTypeDef frame_tmp;
     std::vector<LiDARFrameTypeDef> frameVec;
     std::vector<Coord> coordVec;
+    std::unordered_map<float, AverageCoord> averagecoordMap;
 
-    std::set<float> temp;
+    std::set<float> temp_0;
+    std::set<float> temp_1;
+    std::set<float> temp_2;
+    std::set<float> temp_3;
 };
 
 #endif // __LD19_H__

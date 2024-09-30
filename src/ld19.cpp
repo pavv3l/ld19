@@ -203,7 +203,7 @@ void LD19::saveFile()
         if(x.intensity > _intensity)
         writeFile << x;
     }
-    std::cout << "File coord_2 was saved points " << coordVec.size() << " unikalne start angle: " << temp.size() << "\n";
+    std::cout << "File coord_2 was saved points " << coordVec.size() << "\n";
     writeFile.close();
 
     std::string fileCord3 = saveFilCord + "_Coord_xy3_i" + std::to_string(_intensity) + ".txt";
@@ -222,6 +222,35 @@ void LD19::saveFile()
     }
     std::cout << "File coord_3 was saved\n";
     writeFile.close();
+
+    std::string fileCordAv1 = "Average_Coord_xy3_i" + std::to_string(_intensity) + ".txt";
+    writeFile.open(fileCordAv1, std::ios::out);
+    
+    if(!writeFile.is_open())
+    {
+        std::cerr << "file Average_coord_xy3 to save is not open\n";
+        return;
+    }
+    Coord::_precision = 3;
+    std::cout << "Mapa average size: " << averagecoordMap.size() << "\n";
+    for(auto& x: averagecoordMap)
+    {
+        std::cout << "MApa oper1<<\n";
+        if(x.second.intensity > _intensity)
+        {
+            std::cout << "MApa oper2<<\n";
+            //writeFile << dynamic_cast<Coord&>(x.second);
+            writeFile << x.second;
+        }
+    }
+    std::cout << "File Average_coord_xy3 was saved\n";
+    writeFile.close();
+
+
+    std::cout << "Unikale katy:\n" << "Bez zaokraglania: " << temp_0.size() << "\n"
+        << "1 miejsce po przecinku: " << temp_1.size() << "\n"
+        << "2 miejsca po przecinku: " << temp_2.size() << "\n"
+        << "3 miejsca po przecinku: " << temp_3.size() << "\n";
 }
 
 bool LD19::analyzeChunk(std::vector<uint8_t>& bit)
@@ -341,12 +370,23 @@ bool LD19::analyzeFrame(uint8_t* frame, int len)
         {
             angl -= 360.;
         }
+        tmpCord[i].angle = angl;
+        tmpCord[i].distance = tmpLidar.point[i].distance;
+        //
+        temp_0.insert(angl);
+        temp_1.insert(Coord::round(angl, 1));
+        temp_2.insert(Coord::round(angl, 2));
+        temp_3.insert(Coord::round(angl, 3));
+        //
+        tmpCord[i].point.x = static_cast<float>(tmpLidar.point[i].distance)/1000. * std::sin(DegreesToRadians(angl));
+        tmpCord[i].point.y =static_cast<float>(tmpLidar.point[i].distance)/1000. * std::cos(DegreesToRadians(angl));
 
-        //
-        temp.insert(angl);
-        //
-        tmpCord[i].x = static_cast<float>(tmpLidar.point[i].distance)/1000. * std::sin(DegreesToRadians(angl));
-        tmpCord[i].y =static_cast<float>(tmpLidar.point[i].distance)/1000. * std::cos(DegreesToRadians(angl));
+        Point aver_p;
+        float roundAngl = Coord::round(angl, 1);
+        aver_p.x = static_cast<float>(tmpLidar.point[i].distance)/1000. * std::sin(DegreesToRadians(roundAngl));
+        aver_p.y =static_cast<float>(tmpLidar.point[i].distance)/1000. * std::cos(DegreesToRadians(roundAngl));
+        averagecoordMap[roundAngl].add(aver_p);
+        averagecoordMap[roundAngl].intensity = tmpLidar.point[i].intensity;
     }
     coordVec.insert(coordVec.end(), tmpCord, tmpCord + POINT_PER_PACK);
 
