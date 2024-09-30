@@ -29,7 +29,7 @@ float Coord::round(float arg, int prec)
 std::ostream& operator<<(std::ostream& os, const Coord& crd)
 {
     os << std::dec << crd.angle << ":" << std::dec << std::fixed << std::setprecision(crd._precision) << Coord::round(crd.point.x, crd._precision) << ":"
-    << std::dec << std::fixed << std::setprecision(crd._precision) << Coord::round(crd.point.y, crd._precision) << ":" << std::dec << (int)crd.intensity << "\n";
+    << std::dec << std::fixed << std::setprecision(crd._precision) << Coord::round(crd.point.y, crd._precision) << ":" << std::dec << std::fixed << std::setprecision(3) << crd.distance << "\n";
     return os;
 }
 

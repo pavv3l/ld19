@@ -58,7 +58,7 @@ public:
     uint8_t intensity = 0;
     uint16_t timestamp = 0;
     float angle = 0;
-    uint16_t distance = 0;
+    float distance = 0;
     static uint32_t _precision;
 
     friend std::ostream& operator<<(std::ostream& os, const Coord& crd);

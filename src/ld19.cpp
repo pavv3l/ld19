@@ -18,7 +18,7 @@ std::ostream& operator<<(std::ostream& os, LidarPointStructDef* point)
 {
     for(int i = 0; i < POINT_PER_PACK; ++i)
     {
-        os << ":" << std::dec <<(int)point->distance << ":" << std::dec << (int)point->intensity;
+        os << ":" << std::dec <<(int)point[i].distance << ":" << std::dec << (int)point[i].intensity;
     }
     return os;
 }
@@ -235,15 +235,31 @@ void LD19::saveFile()
     std::cout << "Mapa average size: " << averagecoordMap.size() << "\n";
     for(auto& x: averagecoordMap)
     {
-        std::cout << "MApa oper1<<\n";
         if(x.second.intensity > _intensity)
         {
-            std::cout << "MApa oper2<<\n";
-            //writeFile << dynamic_cast<Coord&>(x.second);
             writeFile << x.second;
         }
     }
     std::cout << "File Average_coord_xy3 was saved\n";
+    writeFile.close();
+
+    std::string fileCordAv2 = "Average_Coord_xy2_i" + std::to_string(_intensity) + ".txt";
+    writeFile.open(fileCordAv2, std::ios::out);
+    
+    if(!writeFile.is_open())
+    {
+        std::cerr << "file Average_coord_xy2 to save is not open\n";
+        return;
+    }
+    Coord::_precision = 2;
+    for(auto& x: averagecoordMap)
+    {
+        if(x.second.intensity > _intensity)
+        {
+            writeFile << x.second;
+        }
+    }
+    std::cout << "File Average_coord_xy2 was saved\n";
     writeFile.close();
 
 
@@ -356,10 +372,13 @@ bool LD19::analyzeFrame(uint8_t* frame, int len)
 
     Coord tmpCord[POINT_PER_PACK];
 
-    int angleDiff = (tmpLidar.end_angle - tmpLidar.start_angle + 360) % 360;
+    int angleDiff = (tmpLidar.end_angle - tmpLidar.start_angle + 36000) % 36000;
 
     float angleStep = static_cast<float>(angleDiff / 100.) / static_cast<float>(POINT_PER_PACK - 1);
     float startAngle = static_cast<float>(tmpLidar.start_angle)/100.;
+
+    std::cout << "END angle: " << tmpLidar.end_angle << " start angle " << tmpLidar.start_angle << " angleDiff " << angleDiff << " angleStep: " << angleStep << "\n";
+
     for(int i = 0; i < POINT_PER_PACK; ++i)
     {
         tmpCord[i].intensity = tmpLidar.point[i].intensity;
@@ -371,7 +390,7 @@ bool LD19::analyzeFrame(uint8_t* frame, int len)
             angl -= 360.;
         }
         tmpCord[i].angle = angl;
-        tmpCord[i].distance = tmpLidar.point[i].distance;
+        tmpCord[i].distance = static_cast<float>(tmpLidar.point[i].distance)/1000.;
         //
         temp_0.insert(angl);
         temp_1.insert(Coord::round(angl, 1));
@@ -379,14 +398,17 @@ bool LD19::analyzeFrame(uint8_t* frame, int len)
         temp_3.insert(Coord::round(angl, 3));
         //
         tmpCord[i].point.x = static_cast<float>(tmpLidar.point[i].distance)/1000. * std::sin(DegreesToRadians(angl));
-        tmpCord[i].point.y =static_cast<float>(tmpLidar.point[i].distance)/1000. * std::cos(DegreesToRadians(angl));
+        tmpCord[i].point.y = static_cast<float>(tmpLidar.point[i].distance)/1000. * std::cos(DegreesToRadians(angl));
 
         Point aver_p;
-        float roundAngl = Coord::round(angl, 1);
+        float roundAngl = Coord::round(angl, 2);
         aver_p.x = static_cast<float>(tmpLidar.point[i].distance)/1000. * std::sin(DegreesToRadians(roundAngl));
         aver_p.y =static_cast<float>(tmpLidar.point[i].distance)/1000. * std::cos(DegreesToRadians(roundAngl));
-        averagecoordMap[roundAngl].add(aver_p);
-        averagecoordMap[roundAngl].intensity = tmpLidar.point[i].intensity;
+        if(tmpLidar.point[i].intensity > _intensity)
+        {
+            averagecoordMap[roundAngl].add(aver_p);
+            averagecoordMap[roundAngl].intensity = tmpLidar.point[i].intensity;
+        }
     }
     coordVec.insert(coordVec.end(), tmpCord, tmpCord + POINT_PER_PACK);
 
