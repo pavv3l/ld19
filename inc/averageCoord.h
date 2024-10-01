@@ -4,26 +4,38 @@
 class AverageCoord: public Coord
 {
 public:
-    void add(const Point& p)
+    void addPoint(const Point& p)
     {
-        add(p.x, p.y);
+        addPoint(p.x, p.y);
     }
-    void add(float x, float y)
+    void addPoint(float x, float y)
     {
-        float tmp_x = point.x * cnt;
-        float tmp_y = point.y * cnt;
+        float tmp_x = point.x * cntPoint;
+        float tmp_y = point.y * cntPoint;
 
-        ++cnt;
+        ++cntPoint;
 
         tmp_x += x;
         tmp_y += y;
 
-        tmp_x /= cnt;
-        tmp_y /= cnt;
+        tmp_x /= cntPoint;
+        tmp_y /= cntPoint;
 
         point.x = tmp_x;
         point.y = tmp_y;
     }
+    void addIntensity(uint8_t i)
+    {
+        uint32_t tmpInt = intensity * cntIntensity;
+
+        ++cntIntensity;
+
+        tmpInt += i;
+        tmpInt /= cntIntensity;
+
+        intensity = static_cast<uint8_t>(tmpInt);
+    }
 protected:
-    uint32_t cnt = 0;
+    uint32_t cntPoint = 0;
+    uint32_t cntIntensity = 0;
 };

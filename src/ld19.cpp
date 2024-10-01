@@ -408,7 +408,9 @@ bool LD19::analyzeFrame(uint8_t* frame, int len)
         if(tmpLidar.point[i].intensity > _intensity)
         {
             auto it = averagecoordMap.insert(std::make_pair(roundAngl, AverageCoord()));
-            it.first->second.intensity = tmpLidar.point[i].intensity;
+               
+            it.first->second.addPoint(aver_p);
+            it.first->second.addIntensity(tmpLidar.point[i].intensity);
         }
     }
     coordVec.insert(coordVec.end(), tmpCord, tmpCord + POINT_PER_PACK);
