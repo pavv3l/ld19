@@ -415,10 +415,13 @@ bool LD19::analyzeFrame(uint8_t* frame, int len)
         float roundAngl = Coord::round(angl, 2);
         aver_p.x = static_cast<float>(tmpLidar.point[i].distance)/1000. * std::sin(DegreesToRadians(roundAngl));
         aver_p.y =static_cast<float>(tmpLidar.point[i].distance)/1000. * std::cos(DegreesToRadians(roundAngl));
+        
         if(tmpLidar.point[i].intensity > _intensity)
         {
-            averagecoordMap[roundAngl].add(aver_p);
-            averagecoordMap[roundAngl].intensity = tmpLidar.point[i].intensity;
+            auto it = averagecoordMap.insert(std::make_pair(roundAngl, AverageCoord()));
+               
+            it.first->second.addPoint(aver_p);
+            it.first->second.addIntensity(tmpLidar.point[i].intensity);
         }
     }
     coordVec.insert(coordVec.end(), tmpCord, tmpCord + POINT_PER_PACK);
