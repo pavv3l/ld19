@@ -274,6 +274,8 @@ bool LD19::analyzeChunk(std::vector<uint8_t>& bit)
     all_bytes += bit.size();
     LiDARFrameTypeDef tmp;
     status = Ld19Status::PKG_HEADER;
+    static bool goodLastRead = false;
+    static int goodLastReadInd = 0;
 
     for(int i = 0; i < bit.size() - sizeof(LiDARFrameTypeDef); ++i)
     {
@@ -293,11 +295,20 @@ bool LD19::analyzeChunk(std::vector<uint8_t>& bit)
             {
                 if( analyzeFrame(&bit[i-1], sizeof(LiDARFrameTypeDef)) )
                 {
+                    std::cout << "Good read " << i-1 << "\n";
                     i += sizeof(LiDARFrameTypeDef) - 2;
                     ++good_readings;
+                    goodLastRead = true;
+                    goodLastReadInd = i-1;
                 }
                 else
                 {
+                    std::cout << "Bad read " << i-1 << "\n";
+                    if(goodLastRead)
+                    {
+                        i = goodLastReadInd;
+                    }
+                    goodLastRead = false;
                     ++bad_readings;
                 }
                 status = Ld19Status::PKG_HEADER;
@@ -377,7 +388,7 @@ bool LD19::analyzeFrame(uint8_t* frame, int len)
     float angleStep = static_cast<float>(angleDiff / 100.) / static_cast<float>(POINT_PER_PACK - 1);
     float startAngle = static_cast<float>(tmpLidar.start_angle)/100.;
 
-    std::cout << "END angle: " << tmpLidar.end_angle << " start angle " << tmpLidar.start_angle << " angleDiff " << angleDiff << " angleStep: " << angleStep << "\n";
+    //std::cout << "END angle: " << tmpLidar.end_angle << " start angle " << tmpLidar.start_angle << " angleDiff " << angleDiff << " angleStep: " << angleStep << "\n";
 
     for(int i = 0; i < POINT_PER_PACK; ++i)
     {
